@@ -11,6 +11,7 @@ import (
 
 type RoomStore interface {
 	Create(context.Context, *types.Room) (*types.Room, error)
+	GetList(context.Context, bson.M) ([]*types.Room, error)
 }
 
 type MongoRoomStore struct {
@@ -41,4 +42,16 @@ func (s *MongoRoomStore) Create(ctx context.Context, room *types.Room) (*types.R
 	s.HotelStore.Update(ctx, filter, update)
 
 	return room, nil
+}
+
+func (s *MongoRoomStore) GetList(ctx context.Context, filter bson.M) ([]*types.Room, error) {
+	cur, err := s.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	var rooms []*types.Room
+	if err := cur.All(ctx, &rooms); err != nil {
+		return nil, err
+	}
+	return rooms, nil
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/Stiffjobs/hotel-reservation/api"
+	"github.com/Stiffjobs/hotel-reservation/api/middleware"
 	"github.com/Stiffjobs/hotel-reservation/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,14 +32,39 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	app := fiber.New(config)
-	apiv1 := app.Group("/api/v1")
 
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(client))
+	//initialization
+	var (
+		app         = fiber.New(config)
+		apiv1       = app.Group("/api/v1", middleware.JWTAuthentication)
+		apiv1Public = app.Group("/api")
+		hotelStore  = db.NewMongoHotelStore(client)
+		roomStore   = db.NewMongoRoomStore(client, hotelStore)
+		userStore   = db.NewMongoUserStore(client)
+		userHandler = api.NewUserHandler(userStore)
+		authHandler = api.NewAuthHandler(userStore)
+		store       = &db.Store{
+			Hotel: hotelStore,
+			Room:  roomStore,
+			User:  userStore,
+		}
+		hotelHandler = api.NewHotelHandler(store)
+	)
+
+	//auth handlers
+	apiv1Public.Post("/auth", authHandler.HandleAuthenticate)
+
+	//Versioned
+	//user handlers
 	apiv1.Get("/user", userHandler.HandleGetUsers)
 	apiv1.Post("/user", userHandler.HandlePostUser)
 	apiv1.Put("/user/:id", userHandler.HandlePutUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
 	apiv1.Get("/user/:id", userHandler.HandleGetUserByID)
+
+	//hotel handlers
+	apiv1.Get("/hotel", hotelHandler.HandleGetListHotel)
+	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotelByID)
+	apiv1.Get("/hotel/:id/room", hotelHandler.HandleGetListRoom)
 	log.Fatal(app.Listen(*listenAddr))
 }
