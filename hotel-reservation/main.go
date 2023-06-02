@@ -50,6 +50,11 @@ func main() {
 		}
 		hotelHandler = api.NewHotelHandler(store)
 	)
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(map[string]string{
+			"message": "Hello World",
+		})
+	})
 
 	//auth handlers
 	apiv1Public.Post("/auth", authHandler.HandleAuthenticate)
