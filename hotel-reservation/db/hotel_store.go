@@ -11,7 +11,7 @@ import (
 
 type HotelStore interface {
 	GetByID(context.Context, string) (*types.Hotel, error)
-	GetList(context.Context) ([]*types.Hotel, error)
+	GetList(context.Context, bson.M) ([]*types.Hotel, error)
 	Create(context.Context, *types.Hotel) (*types.Hotel, error)
 	Update(context.Context, bson.M, bson.M) error
 }
@@ -41,8 +41,8 @@ func (s *MongoHotelStore) GetByID(ctx context.Context, id string) (*types.Hotel,
 	return &hotel, nil
 }
 
-func (s *MongoHotelStore) GetList(ctx context.Context) ([]*types.Hotel, error) {
-	cur, err := s.collection.Find(ctx, bson.M{})
+func (s *MongoHotelStore) GetList(ctx context.Context, filter bson.M) ([]*types.Hotel, error) {
+	cur, err := s.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

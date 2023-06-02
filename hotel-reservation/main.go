@@ -35,19 +35,22 @@ func main() {
 
 	//initialization
 	var (
-		app         = fiber.New(config)
-		apiv1       = app.Group("/api/v1", middleware.JWTAuthentication)
-		apiv1Public = app.Group("/api")
-		hotelStore  = db.NewMongoHotelStore(client)
-		roomStore   = db.NewMongoRoomStore(client, hotelStore)
-		userStore   = db.NewMongoUserStore(client)
-		userHandler = api.NewUserHandler(userStore)
-		authHandler = api.NewAuthHandler(userStore)
-		store       = &db.Store{
-			Hotel: hotelStore,
-			Room:  roomStore,
-			User:  userStore,
+		app          = fiber.New(config)
+		userStore    = db.NewMongoUserStore(client)
+		hotelStore   = db.NewMongoHotelStore(client)
+		bookingStore = db.NewMongoBookingStore(client)
+		roomStore    = db.NewMongoRoomStore(client, hotelStore)
+		store        = &db.Store{
+			Hotel:   hotelStore,
+			Room:    roomStore,
+			User:    userStore,
+			Booking: bookingStore,
 		}
+		userHandler  = api.NewUserHandler(userStore)
+		roomHandler  = api.NewRoomHandler(store)
+		authHandler  = api.NewAuthHandler(userStore)
+		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication(userStore))
+		apiv1Public  = app.Group("/api")
 		hotelHandler = api.NewHotelHandler(store)
 	)
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -71,5 +74,9 @@ func main() {
 	apiv1.Get("/hotel", hotelHandler.HandleGetListHotel)
 	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotelByID)
 	apiv1.Get("/hotel/:id/room", hotelHandler.HandleGetListRoom)
+
+	//book handler
+	apiv1.Get("/room", roomHandler.HandleGetListRoom)
+	apiv1.Post("/room/:id/book", roomHandler.HandleBookRoom)
 	log.Fatal(app.Listen(*listenAddr))
 }

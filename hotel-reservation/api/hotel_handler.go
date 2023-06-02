@@ -33,7 +33,7 @@ func (h *HotelHandler) HandleGetHotelByID(c *fiber.Ctx) error {
 }
 
 func (h *HotelHandler) HandleGetListHotel(c *fiber.Ctx) error {
-	hotels, err := h.store.Hotel.GetList(c.Context())
+	hotels, err := h.store.Hotel.GetList(c.Context(), bson.M{})
 	if err != nil {
 		return err
 	}
