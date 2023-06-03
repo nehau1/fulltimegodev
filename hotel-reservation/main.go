@@ -46,12 +46,14 @@ func main() {
 			User:    userStore,
 			Booking: bookingStore,
 		}
-		userHandler  = api.NewUserHandler(userStore)
-		roomHandler  = api.NewRoomHandler(store)
-		authHandler  = api.NewAuthHandler(userStore)
-		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication(userStore))
-		apiv1Public  = app.Group("/api")
-		hotelHandler = api.NewHotelHandler(store)
+		userHandler    = api.NewUserHandler(userStore)
+		roomHandler    = api.NewRoomHandler(store)
+		bookingHandler = api.NewBookingHandler(store)
+		authHandler    = api.NewAuthHandler(userStore)
+		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(userStore))
+		admin          = apiv1.Group("/admin", middleware.AdminAuth)
+		apiv1Public    = app.Group("/api")
+		hotelHandler   = api.NewHotelHandler(store)
 	)
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(map[string]string{
@@ -78,5 +80,12 @@ func main() {
 	//book handler
 	apiv1.Get("/room", roomHandler.HandleGetListRoom)
 	apiv1.Post("/room/:id/book", roomHandler.HandleBookRoom)
+
+	// TODO: cancel a booking
+
+	//bookings handler
+	apiv1.Get("/booking", bookingHandler.HandleGetListBooking)
+	admin.Get("/booking/:id", bookingHandler.HandleGetBooking)
+
 	log.Fatal(app.Listen(*listenAddr))
 }

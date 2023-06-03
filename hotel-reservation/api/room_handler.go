@@ -95,7 +95,6 @@ func (h *RoomHandler) HandleBookRoom(c *fiber.Ctx) error {
 		TillDate:   params.TillDate,
 		NumPersons: params.NumPersons,
 	}
-	fmt.Println(booking)
 	inserted, err := h.store.Booking.Create(c.Context(), &booking)
 	if err != nil {
 		return err
