@@ -35,6 +35,31 @@ func (h *BookingHandler) HandleGetBooking(c *fiber.Ctx) error {
 	}
 	return c.JSON(booking)
 }
+
+func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
+	id := c.Params("id")
+	booking, err := h.store.Booking.GetByID(c.Context(), id)
+	if err != nil {
+		return err
+	}
+	user, err := getAuthedUser(c)
+	if err != nil {
+		return err
+	}
+	if booking.UserID != user.ID {
+		return c.Status(http.StatusUnauthorized).JSON(genericResp{
+			Type:    "error",
+			Message: "not authorized",
+		})
+	}
+
+	if err := h.store.Booking.Update(c.Context(), c.Params("id"), bson.M{"canceled": true}); err != nil {
+		return err
+	}
+
+	return c.JSON(genericResp{Type: "msg", Message: "updated"})
+}
+
 func (h *BookingHandler) HandleGetListBooking(c *fiber.Ctx) error {
 	bookings, err := h.store.Booking.GetList(c.Context(), bson.M{})
 	if err != nil {
