@@ -63,6 +63,7 @@ func seedBooking(userID, roomID primitive.ObjectID, from, till time.Time) *types
 		RoomID:   roomID,
 		FromDate: from,
 		TillDate: till,
+		Canceled: false,
 	}
 
 	insertedBooking, err := bookingStore.Create(context.Background(), booking)
