@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,41 +9,22 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Stiffjobs/hotel-reservation/db"
-	"github.com/Stiffjobs/hotel-reservation/types"
+	"github.com/Stiffjobs/hotel-reservation/db/fixtures"
 	"github.com/gofiber/fiber/v2"
 )
-
-func postTestUser(t *testing.T, userStore db.UserStore) *types.User{
-	user, err := types.NewUserFromParams(types.CreateUserParams{
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "helloworld@gmail.com",
-		Password:  "password",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	user, err = userStore.Create(context.TODO(), user)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return user
-}
-
 func TestAuthenticateSuccess(t *testing.T) {
 	testdb := setup(t)
 	defer testdb.teardown(t)
-	insertedUser:= postTestUser(t, testdb)
+	insertedUser := fixtures.AddUser(testdb.Store, "john", "doe", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler(testdb)
+	authHandler := NewAuthHandler(testdb.User)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
 
 	params := AuthParams{
-		Email: "helloworld@gmail.com",
-		Password: "password",
+		Email: "johndoe@gmail.com",
+		Password: "john_doe",
 	}
 
 	b, _ := json.Marshal(params)
@@ -53,7 +33,6 @@ func TestAuthenticateSuccess(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := app.Test(req)
-	t.Logf("resp status: %v", resp.StatusCode)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +40,6 @@ func TestAuthenticateSuccess(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
 		t.Fatal(err)
 	} 
-	t.Log(authResponse)
 	if authResponse.Token == "" {
 		t.Fatal("expected token to be present")
 	}
@@ -79,13 +57,13 @@ func TestAuthenticateWithWrongPassword(t *testing.T) {
 
 	testdb := setup(t)
 	defer testdb.teardown(t)
-	_ = postTestUser(t, testdb)
+	fixtures.AddUser(testdb.Store, "john", "doe", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler(testdb)
+	authHandler := NewAuthHandler(testdb.User)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 	params := AuthParams{
-		Email: "helloworld@gmail.com",
+		Email: "johndoe@gmail.com",
 		Password: "wrongpassword",
 	}
 	b, _ := json.Marshal(params)

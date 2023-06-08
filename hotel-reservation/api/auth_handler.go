@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/Stiffjobs/hotel-reservation/db"
@@ -66,7 +65,6 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 	if valid := types.IsValidPassword(user.EncryptedPassword, params.Password); !valid {
 		return invalidCredentials(c)
 	}
-	fmt.Println("user authenticated: ", user)
 	resp := AuthResponse{
 		User:  user,
 		Token: CreateTokenFromUser(user),
@@ -85,8 +83,6 @@ func CreateTokenFromUser(user *types.User) string {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-	fmt.Println("secret: ", secret)
 	tokenStr, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		fmt.Println("failed to sign token: ", err)
