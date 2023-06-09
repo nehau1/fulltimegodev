@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/Stiffjobs/hotel-reservation/api"
-	"github.com/Stiffjobs/hotel-reservation/api/middleware"
 	"github.com/Stiffjobs/hotel-reservation/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,12 +13,7 @@ import (
 )
 
 var config = fiber.Config{
-	ErrorHandler: func(c *fiber.Ctx, err error) error {
-		return c.JSON(map[string]string{
-			"error": err.Error(),
-		})
-
-	},
+	ErrorHandler: api.ErrorHandler,
 }
 
 func main() {
@@ -50,8 +44,8 @@ func main() {
 		roomHandler    = api.NewRoomHandler(store)
 		bookingHandler = api.NewBookingHandler(store)
 		authHandler    = api.NewAuthHandler(userStore)
-		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(userStore))
-		admin          = apiv1.Group("/admin", middleware.AdminAuth)
+		apiv1          = app.Group("/api/v1", api.JWTAuthentication(userStore))
+		admin          = apiv1.Group("/admin", api.AdminAuth)
 		apiv1Public    = app.Group("/api")
 		hotelHandler   = api.NewHotelHandler(store)
 	)

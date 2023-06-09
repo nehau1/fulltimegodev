@@ -1,13 +1,10 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/Stiffjobs/hotel-reservation/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type HotelHandler struct {
@@ -24,10 +21,7 @@ func (h *HotelHandler) HandleGetHotelByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	hotel, err := h.store.Hotel.GetByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "hotel not found"})
-		}
-		return err
+		return ErrInvalidID()
 	}
 	return c.JSON(hotel)
 }

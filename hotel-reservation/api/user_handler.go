@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/Stiffjobs/hotel-reservation/db"
 	"github.com/Stiffjobs/hotel-reservation/types"
@@ -24,7 +25,7 @@ func (h *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 	user, err := h.userStore.GetByID(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "user not found"})
+			return ErrResourceNotFound("user")
 		}
 		return err
 	}
@@ -34,7 +35,7 @@ func (h *UserHandler) HandleGetUserByID(c *fiber.Ctx) error {
 func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 	users, err := h.userStore.GetList(c.Context())
 	if err != nil {
-		return err
+		return ErrResourceNotFound("users")
 	}
 	return c.JSON(users)
 }
@@ -42,18 +43,18 @@ func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	var params types.CreateUserParams
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return ErrBadRequest()
 	}
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.JSON(errors)
 	}
 	user, err := types.NewUserFromParams(params)
 	if err != nil {
-		return err
+		return ErrBadRequest()
 	}
 	insertedUser, err := h.userStore.Create(c.Context(), user)
 	if err != nil {
-		return err
+		return NewError(http.StatusBadRequest, err.Error())
 	}
 	return c.JSON(insertedUser)
 }
@@ -65,10 +66,10 @@ func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 	)
 
 	if err := c.BodyParser(&update); err != nil {
-		return err
+		return ErrBadRequest()
 	}
 	if err := h.userStore.Update(c.Context(), userID, update); err != nil {
-		return err
+		return ErrResourceNotFound("user")
 	}
 
 	return c.JSON(map[string]string{"updated": userID})
@@ -76,7 +77,7 @@ func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 func (h *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 	userID := c.Params("id")
 	if err := h.userStore.Delete(c.Context(), userID); err != nil {
-		return err
+		return ErrResourceNotFound("user")
 	}
 	return c.JSON(map[string]string{"deleted": userID})
 }
