@@ -6,6 +6,13 @@ const (
 	TestDBNAME = "hotel-reservation-test"
 )
 
+type Map map[string]any
+
+type Pagination struct {
+	Page  int64
+	Limit int64
+}
+
 type Store struct {
 	Hotel   HotelStore
 	User    UserStore

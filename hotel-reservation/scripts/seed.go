@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/Stiffjobs/hotel-reservation/api"
@@ -12,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
 
 func main() {
 	ctx := context.Background()
@@ -26,25 +26,30 @@ func main() {
 	}
 	hotelStore := db.NewMongoHotelStore(client)
 	store := &db.Store{
-		User: db.NewMongoUserStore(client),
-		Hotel: hotelStore,
-		Room: db.NewMongoRoomStore(client,hotelStore),
+		User:    db.NewMongoUserStore(client),
+		Hotel:   hotelStore,
+		Room:    db.NewMongoRoomStore(client, hotelStore),
 		Booking: db.NewMongoBookingStore(client),
 	}
 	john := fixtures.AddUser(store, "john", "doe", false)
 
 	fmt.Printf("john -> %s\n", api.CreateTokenFromUser(john))
-	adminUser := fixtures.AddUser(store,"admin", "user", true)
+	adminUser := fixtures.AddUser(store, "admin", "user", true)
 	fmt.Printf("admin -> %s\n", api.CreateTokenFromUser(adminUser))
-	fixtures.AddHotel(store, "Bellagio", "Las Vegas", 5,nil)
-	fixtures.AddHotel(store, "the cozy hotel", "The Netherlands", 4,nil)
+	fixtures.AddHotel(store, "Bellagio", "Las Vegas", 5, nil)
+	fixtures.AddHotel(store, "the cozy hotel", "The Netherlands", 4, nil)
 	hotel := fixtures.AddHotel(store, "Bellucia", "France", 3, nil)
 	smallRoom := fixtures.AddRoom(store, "small", 89.99, true, hotel.ID)
 	mediumRoom := fixtures.AddRoom(store, "medium", 289.99, true, hotel.ID)
-	largeRoom := fixtures.AddRoom(store, "large",  389.99, false, hotel.ID)
-	fixtures.AddBooking(store,adminUser.ID, smallRoom.ID, time.Now().AddDate(0, 1, 0), time.Now().AddDate(0, 1, 1))
+	largeRoom := fixtures.AddRoom(store, "large", 389.99, false, hotel.ID)
+	fixtures.AddBooking(store, adminUser.ID, smallRoom.ID, time.Now().AddDate(0, 1, 0), time.Now().AddDate(0, 1, 1))
 	fixtures.AddBooking(store, adminUser.ID, mediumRoom.ID, time.Now().AddDate(0, 1, 15), time.Now().AddDate(0, 2, 1))
 	booking := fixtures.AddBooking(store, adminUser.ID, largeRoom.ID, time.Now().AddDate(0, 2, 20), time.Now().AddDate(0, 3, 1))
 	fmt.Println(booking)
-}
 
+	for i := 0; i < 100; i++ {
+		name := fmt.Sprintf("random hotel name %d", i)
+		location := fmt.Sprintf("location %d", i)
+		fixtures.AddHotel(store, name, location, rand.Intn(5)+1, nil)
+	}
+}

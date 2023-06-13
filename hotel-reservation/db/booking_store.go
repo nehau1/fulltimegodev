@@ -12,7 +12,7 @@ import (
 type BookingStore interface {
 	Create(context.Context, *types.Booking) (*types.Booking, error)
 	GetByID(context.Context, string) (*types.Booking, error)
-	GetList(context.Context, bson.M) ([]*types.Booking, error)
+	GetList(context.Context, Map) ([]*types.Booking, error)
 	Update(context.Context, string, bson.M) error
 }
 
@@ -51,7 +51,7 @@ func (s *MongoBookingStore) GetByID(ctx context.Context, id string) (*types.Book
 	return &booking, nil
 }
 
-func (s *MongoBookingStore) GetList(ctx context.Context, filter bson.M) ([]*types.Booking, error) {
+func (s *MongoBookingStore) GetList(ctx context.Context, filter Map) ([]*types.Booking, error) {
 	cur, err := s.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err

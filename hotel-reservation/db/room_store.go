@@ -11,7 +11,7 @@ import (
 
 type RoomStore interface {
 	Create(context.Context, *types.Room) (*types.Room, error)
-	GetList(context.Context, bson.M) ([]*types.Room, error)
+	GetList(context.Context, Map) ([]*types.Room, error)
 }
 
 type MongoRoomStore struct {
@@ -36,15 +36,15 @@ func (s *MongoRoomStore) Create(ctx context.Context, room *types.Room) (*types.R
 	room.ID = resp.InsertedID.(primitive.ObjectID)
 
 	// update the hotel with this room id
-	filter := bson.M{"_id": room.HotelID}
-	update := bson.M{"$push": bson.M{"rooms": room.ID}}
+	filter := Map{"_id": room.HotelID}
+	update := Map{"$push": bson.M{"rooms": room.ID}}
 
 	s.HotelStore.Update(ctx, filter, update)
 
 	return room, nil
 }
 
-func (s *MongoRoomStore) GetList(ctx context.Context, filter bson.M) ([]*types.Room, error) {
+func (s *MongoRoomStore) GetList(ctx context.Context, filter Map) ([]*types.Room, error) {
 	cur, err := s.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err

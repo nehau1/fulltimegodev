@@ -53,7 +53,7 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 }
 
 func (h *BookingHandler) HandleGetListBooking(c *fiber.Ctx) error {
-	bookings, err := h.store.Booking.GetList(c.Context(), bson.M{})
+	bookings, err := h.store.Booking.GetList(c.Context(), db.Map{})
 	if err != nil {
 		return ErrResourceNotFound("bookings")
 	}
