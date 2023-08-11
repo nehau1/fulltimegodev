@@ -10,24 +10,26 @@ import (
 	"strconv"
 
 	"github.com/Stiffjobs/toll-calculator/types"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	httpListenAddr := flag.String("httpAddr", ":3000", "the listen address of the HTTP server")
+	httpListenAddr := flag.String("httpAddr", ":4000", "the listen address of the HTTP server")
 	grpcListenAddr := flag.String("grpcAddr", ":3001", "the listen address of the GRPC server")
 	flag.Parse()
 	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)
+	svc = NewMetricsMiddleware(svc)
 	svc = NewLogMiddleware(svc)
 
 	go func() {
-		log.Fatal(makeGRPCTansport(*grpcListenAddr, svc))
+		log.Fatal(makeGRPCTransport(*grpcListenAddr, svc))
 	}()
 	log.Fatal(makeHTTPTransport(*httpListenAddr, svc))
 }
 
-func makeGRPCTansport(listenAddr string, svc Aggregator) error {
+func makeGRPCTransport(listenAddr string, svc Aggregator) error {
 	fmt.Println("HTTP transport running on port ", listenAddr)
 	// make a tcp listener
 	ln, err := net.Listen("tcp", listenAddr)
@@ -46,6 +48,7 @@ func makeHTTPTransport(listenAddr string, svc Aggregator) error {
 	fmt.Println("HTTP transport running on port ", listenAddr)
 	http.HandleFunc("/aggregate", handleAggregate(svc))
 	http.HandleFunc("/invoice", handleGetInvoice(svc))
+	http.Handle("/metrics", promhttp.Handler())
 
 	return http.ListenAndServe(listenAddr, nil)
 }
